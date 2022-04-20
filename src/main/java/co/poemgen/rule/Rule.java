@@ -11,13 +11,16 @@ import java.util.stream.Collectors;
 
 public class Rule {
 
+    public String name;
+
     protected Supplier<Node>[] ruleOptions;
 
     protected Node[] wordOptions;
 
     private Random random = new Random();
 
-    public Rule(String[] words) {
+    public Rule(String name, String[] words) {
+        this.name = name;
         wordOptions = new Node[words.length];
         Arrays.stream(words)
                 .map(WordNode::new)
