@@ -4,54 +4,52 @@ import co.poemgen.node.Node;
 import co.poemgen.node.implementation.RuleNode;
 import co.poemgen.node.implementation.WordNode;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class Rule {
 
     public String name;
 
-    protected Supplier<Node>[] ruleOptions;
-
-    protected Node[] wordOptions;
+    protected Supplier<Node>[][] ruleOptions;
 
     private Random random = new Random();
 
-    public Rule(String name, String[] words) {
+    public Rule(String name) {
         this.name = name;
-        wordOptions = new Node[words.length];
-        Arrays.stream(words)
-                .map(WordNode::new)
-                .collect(Collectors.toList())
-                .toArray(wordOptions);
     }
 
-    public void setRuleOptions(Supplier<Node>[] ruleOptions) {
+    public void setRuleOptions(Supplier<Node>[][] ruleOptions) {
         this.ruleOptions = ruleOptions;
     }
 
     public Node generated(RuleNode currentNode) {
+        int nextRuleLength = ruleOptions.length;
+        Node[] nextNodesRules = new Node[nextRuleLength];
 
-        Node valueNode = wordOptions[getRandomInt(wordOptions.length)];
-        currentNode.setValue(valueNode);
+        for(int i=0; i<ruleOptions.length; i++) {
+            Supplier<Node>[] ruleOption = ruleOptions[i];
+            Supplier<Node> valueNode = ruleOption[getRandomInt(ruleOption.length)];
+            Node currentNodeValue = valueNode.get();
 
-        Node nextRule = ruleOptions[getRandomInt(ruleOptions.length)].get();
-
-        if(nextRule instanceof WordNode){
-            currentNode.setValue(nextRule);
-            return currentNode;
+            if(currentNodeValue instanceof WordNode){
+                nextNodesRules[i] = currentNodeValue;
+            }
+            else {
+                Rule rule = currentNode.getRule();
+                nextNodesRules[i] = rule.generated((RuleNode) currentNodeValue);
+            }
         }
 
-        Rule rule = ((RuleNode) nextRule).getRule();
-
-        currentNode.setNextRule(rule.generated((RuleNode) nextRule));
-
+        currentNode.setNextRule(nextNodesRules);
         return currentNode;
     }
 
     private int getRandomInt(int length) {
         return random.nextInt(length);
+    }
+
+    public Supplier<Node>[][] getRuleOptions() {
+        return ruleOptions;
     }
 }
